@@ -1,331 +1,116 @@
+```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-
-    <meta
-        name="viewport"
-        content="width=device-width, initial-scale=1.0"
-    >
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     <title>REX AI</title>
 
-    <link
-        rel="stylesheet"
-        href="{{ url_for('static', filename='style.css') }}"
-    >
-</head>
-
-<body>
-
-    <!-- =====================================
-         APP
-    ====================================== -->
-
-    <div class="app">
-
-        <!-- =================================
-             SIDEBAR
-        ================================== -->
-
-        <aside class="sidebar">
-
-            <div class="brand">
-                <div class="brand-logo">R</div>
-
-                <div>
-                    <h1>REX AI</h1>
-                    <span>AI Assistant</span>
-                </div>
-            </div>
-
-
-            <!-- New Chat -->
-
-            <button
-                class="new-chat"
-                onclick="clearChat()"
-            >
-                ＋ New Chat
-            </button>
-
-
-            <!-- Modes -->
-
-            <div class="sidebar-section">
-
-                <div class="section-title">
-                    TOOLS
-                </div>
-
-                <button
-                    class="mode-button active"
-                    data-mode="chat"
-                >
-                    <span>💬</span>
-                    <span>Chat</span>
-                </button>
-
-                <button
-                    class="mode-button"
-                    data-mode="search"
-                >
-                    <span>🔍</span>
-                    <span>Search</span>
-                </button>
-
-                <button
-                    class="mode-button"
-                    data-mode="image"
-                >
-                    <span>🎨</span>
-                    <span>Generate Image</span>
-                </button>
-
-                <button
-                    class="mode-button"
-                    data-mode="video"
-                >
-                    <span>🎬</span>
-                    <span>Generate Video</span>
-                </button>
-
-                <button
-                    class="mode-button"
-                    data-mode="research"
-                >
-                    <span>🧠</span>
-                    <span>Research</span>
-                </button>
-
-            </div>
-
-
-            <!-- Recent Chats -->
-
-            <div class="sidebar-section recent-section">
-
-                <div class="section-title">
-                    RECENT
-                </div>
-
-                <div class="recent-chat">
-                    💬 Welcome to REX
-                </div>
-
-                <div class="recent-chat">
-                    🎨 Image Generator
-                </div>
-
-            </div>
-
-
-            <!-- Bottom -->
-
-            <div class="sidebar-bottom">
-
-                <div class="online-status">
-                    <span class="status-dot"></span>
-
-                    <span>
-                        REX Online
-                    </span>
-                </div>
-
-                <div class="version">
-                    REX AI
-                </div>
-
-            </div>
-
-        </aside>
-
-
-        <!-- =================================
-             MAIN AREA
-        ================================== -->
-
-        <main class="main">
-
-            <!-- Header -->
-
-            <header class="topbar">
-
-                <div class="mobile-brand">
-                    <div class="brand-logo">R</div>
-                    <strong>REX AI</strong>
-                </div>
-
-                <div class="topbar-title">
-                    <span id="currentMode">
-                        💬 Chat
-                    </span>
-                </div>
-
-                <button
-                    class="clear-button"
-                    onclick="clearChat()"
-                    title="Clear chat"
-                >
-                    🗑️
-                </button>
-
-            </header>
-
-
-            <!-- =================================
-                 CHAT AREA
-            ================================== -->
-
-            <section
-                class="chat-container"
-                id="chatBox"
-            >
-
-            </section>
-
-
-            <!-- =================================
-                 QUICK ACTIONS
-            ================================== -->
-
-            <div class="quick-actions">
-
-                <button
-                    class="quick-card"
-                    data-action="chat"
-                >
-                    <span class="quick-icon">
-                        💬
-                    </span>
-
-                    <div>
-                        <strong>
-                            Ask REX
-                        </strong>
-
-                        <small>
-                            Chat with your AI
-                        </small>
-                    </div>
-                </button>
-
-
-                <button
-                    class="quick-card"
-                    data-action="search"
-                >
-                    <span class="quick-icon">
-                        🔍
-                    </span>
-
-                    <div>
-                        <strong>
-                            Search
-                        </strong>
-
-                        <small>
-                            Find information
-                        </small>
-                    </div>
-                </button>
-
-
-                <button
-                    class="quick-card"
-                    data-action="image"
-                >
-                    <span class="quick-icon">
-                        🎨
-                    </span>
-
-                    <div>
-                        <strong>
-                            Create Image
-                        </strong>
-
-                        <small>
-                            Generate an image
-                        </small>
-                    </div>
-                </button>
-
-
-                <button
-                    class="quick-card"
-                    data-action="research"
-                >
-                    <span class="quick-icon">
-                        🧠
-                    </span>
-
-                    <div>
-                        <strong>
-                            Research
-                        </strong>
-
-                        <small>
-                            Deep research
-                        </small>
-                    </div>
-                </button>
-
-            </div>
-
-
-            <!-- =================================
-                 INPUT AREA
-            ================================== -->
-
-            <div class="input-area">
-
-                <div class="input-wrapper">
-
-                    <textarea
-                        id="messageInput"
-                        rows="1"
-                        placeholder="Ask REX anything..."
-                        autocomplete="off"
-                    ></textarea>
-
-
-                    <button
-                        id="sendButton"
-                        class="send-button"
-                        title="Send"
-                    >
-                        ➤
-                    </button>
-
-                </div>
-
-
-                <div class="input-info">
-
-                    <span>
-                        REX AI can make mistakes.
-                    </span>
-
-                    <span>
-                        Enter to send • Shift + Enter for new line
-                    </span>
-
-                </div>
-
-            </div>
-
-        </main>
-
-    </div>
-
-
-    <!-- =====================================
-         JAVASCRIPT
-    ====================================== -->
-
-    <script
-        src="{{ url_for('static', filename='app.js') }}"
-    ></script>
-
-</body>
-</html>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: Arial, Helvetica, sans-serif;
+            background: #0b0f19;
+            color: #ffffff;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        button,
+        textarea {
+            font-family: inherit;
+        }
+
+        /* APP */
+
+        .app {
+            display: flex;
+            height: 100vh;
+        }
+
+        /* SIDEBAR */
+
+        .sidebar {
+            width: 260px;
+            background: #111827;
+            border-right: 1px solid #273244;
+            display: flex;
+            flex-direction: column;
+            padding: 18px;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 25px;
+        }
+
+        .brand-logo {
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
+            background: #ffffff;
+            color: #111827;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 20px;
+        }
+
+        .brand h1 {
+            font-size: 20px;
+        }
+
+        .brand p {
+            color: #9ca3af;
+            font-size: 12px;
+            margin-top: 2px;
+        }
+
+        .new-chat {
+            width: 100%;
+            border: 0;
+            padding: 12px;
+            border-radius: 10px;
+            background: #ffffff;
+            color: #111827;
+            font-weight: bold;
+            cursor: pointer;
+            margin-bottom: 25px;
+        }
+
+        .section-title {
+            color: #6b7280;
+            font-size: 11px;
+            font-weight: bold;
+            margin: 10px 5px;
+            letter-spacing: 1px;
+        }
+
+        .mode-button {
+            width: 100%;
+            border: 0;
+            background: transparent;
+            color: #d1d5db;
+            padding: 11px;
+            border-radius: 9px;
+            text-align: left;
+            cursor: pointer;
+            margin-bottom: 4px;
+            font-size: 14px;
+        }
+
+        .mode-button:hover,
+        .mode-button.active {
+            background: #1f2937;
+            color: #ffffff;
+        }
+```
