@@ -1,231 +1,538 @@
-from flask import Flask, render_template, request, jsonify
-from dotenv import load_dotenv
-import requests
 import os
-import time
+import requests
+
+from flask import Flask, request, jsonify, render_template
+from dotenv import load_dotenv
+
+
+# =========================================================
+# REX AI
+# Created by Blessed Ovenseri
+# =========================================================
 
 load_dotenv()
 
 app = Flask(__name__)
 
-OPENAI_KEY = os.getenv("OPENAI_KEY", "")
-ANTHROPIC_KEY = os.getenv("ANTHROPIC_KEY", "")
-THIRD_KEY = os.getenv("THIRD_KEY", "")
+
+# =========================================================
+# API KEYS
+# =========================================================
+
+OPENAI_KEY = os.environ.get("OPENAI_KEY", "")
+ANTHROPIC_KEY = os.environ.get("ANTHROPIC_KEY", "")
+THIRD_KEY = os.environ.get("THIRD_KEY", "")
+
+IMAGE_API_KEY = os.environ.get("IMAGE_API_KEY", "")
+VIDEO_API_KEY = os.environ.get("VIDEO_API_KEY", "")
 
 
-def try_openai(message):
+# =========================================================
+# REX IDENTITY
+# =========================================================
+
+SYSTEM_PROMPT = """
+You are REX AI.
+
+You were created by Blessed Ovenseri.
+
+IMPORTANT IDENTITY RULE:
+If a user asks:
+- Who created you?
+- Who made you?
+- Who built you?
+- Who is your creator?
+- Who developed you?
+- Who owns REX?
+- Who made REX?
+
+Answer clearly:
+
+"I was created by Blessed Ovenseri."
+
+Do not claim that you created yourself.
+
+You are a helpful AI assistant.
+Be friendly, useful, and concise.
+You can understand Nigerian English and Nigerian Pidgin.
+"""
+
+
+# =========================================================
+# OPENAI CHAT
+# =========================================================
+
+def try_openai(prompt):
+
     if not OPENAI_KEY:
-        return None, "OpenAI key not configured"
+        return None
 
     try:
+
         response = requests.post(
             "https://api.openai.com/v1/chat/completions",
+
             headers={
                 "Authorization": f"Bearer {OPENAI_KEY}",
                 "Content-Type": "application/json"
             },
+
             json={
                 "model": "gpt-4o-mini",
+
                 "messages": [
                     {
                         "role": "system",
-                        "content": (
-                            "You are REX, a helpful AI assistant. "
-                            "You can communicate clearly and naturally. "
-                            "You may use Nigerian Pidgin when appropriate."
-                        )
+                        "content": SYSTEM_PROMPT
                     },
+
                     {
                         "role": "user",
-                        "content": message
+                        "content": prompt
                     }
                 ],
-                "max_tokens": 1200,
+
                 "temperature": 0.7
             },
-            timeout=30
+
+            timeout=60
         )
 
-        if response.ok:
-            data = response.json()
-            answer = data["choices"][0]["message"]["content"]
-            return answer, "OpenAI ✅"
+        if not response.ok:
+            print("OpenAI error:", response.text)
+            return None
 
-        return None, f"OpenAI HTTP {response.status_code}"
+        data = response.json()
 
-    except requests.RequestException as error:
-        return None, f"OpenAI error: {error}"
+        return data["choices"][0]["message"]["content"]
+
+    except Exception as e:
+
+        print("OpenAI exception:", e)
+
+        return None
 
 
-def try_anthropic(message):
+# =========================================================
+# ANTHROPIC CHAT
+# =========================================================
+
+def try_anthropic(prompt):
+
     if not ANTHROPIC_KEY:
-        return None, "Claude key not configured"
+        return None
 
     try:
+
         response = requests.post(
             "https://api.anthropic.com/v1/messages",
+
             headers={
                 "x-api-key": ANTHROPIC_KEY,
                 "anthropic-version": "2023-06-01",
                 "content-type": "application/json"
             },
+
             json={
                 "model": "claude-3-haiku-20240307",
-                "max_tokens": 1200,
+
+                "max_tokens": 1000,
+
+                "system": SYSTEM_PROMPT,
+
                 "messages": [
                     {
                         "role": "user",
-                        "content": message
+                        "content": prompt
                     }
                 ]
             },
-            timeout=30
+
+            timeout=60
         )
 
-        if response.ok:
-            data = response.json()
-            answer = data["content"][0]["text"]
-            return answer, "Claude ✅"
+        if not response.ok:
+            print("Anthropic error:", response.text)
+            return None
 
-        return None, f"Claude HTTP {response.status_code}"
+        data = response.json()
 
-    except requests.RequestException as error:
-        return None, f"Claude error: {error}"
+        return data["content"][0]["text"]
+
+    except Exception as e:
+
+        print("Anthropic exception:", e)
+
+        return None
 
 
-def local_fallback(message):
-    lower = message.lower()
+# =========================================================
+# LOCAL FALLBACK
+# =========================================================
 
-    if "how are you" in lower:
+def local_fallback(prompt):
+
+    p = prompt.lower().strip()
+
+    # Creator questions
+    creator_questions = [
+        "who created you",
+        "who made you",
+        "who built you",
+        "who is your creator",
+        "who developed you",
+        "who made rex",
+        "who built rex",
+        "who created rex",
+        "who owns rex"
+    ]
+
+    if any(question in p for question in creator_questions):
+
+        return "I was created by Blessed Ovenseri."
+
+
+    # Greetings
+    if (
+        p.startswith("hello")
+        or p.startswith("hi")
+        or p.startswith("hey")
+    ):
+
         return (
-            "I dey kampe! 🤖💚 REX is online and ready to help you.",
-            "Local Brain ✅"
+            "Hello! 👋 I'm REX AI, created by Blessed Ovenseri. "
+            "How can I help you?"
         )
 
-    if "who are you" in lower or "your name" in lower:
-        return (
-            "Na me be REX 🤖 — your AI assistant. "
-            "I can chat, generate images, generate videos, "
-            "search, research and help you code.",
-            "Local Brain ✅"
-        )
 
+    # Default
     return (
-        "REX's online AI providers are currently unavailable. "
-        "But the local fallback is still running. 🔧",
-        "Local Fallback ✅"
+        "I'm REX AI. I couldn't reach my AI providers right now, "
+        "but I'm still here to help."
     )
 
 
-def smart_chat(message):
-    logs = []
+# =========================================================
+# SMART CHAT
+# =========================================================
 
-    start = time.time()
+def smart_chat(prompt):
 
-    answer, status = try_openai(message)
-    logs.append(f"Provider 1 — {status}")
+    # Always handle creator identity locally first
+    # so REX gives the correct answer even if an API fails.
+
+    p = prompt.lower()
+
+    creator_questions = [
+        "who created you",
+        "who made you",
+        "who built you",
+        "who is your creator",
+        "who developed you",
+        "who made rex",
+        "who built rex",
+        "who created rex"
+    ]
+
+    if any(question in p for question in creator_questions):
+
+        return "I was created by Blessed Ovenseri."
+
+
+    # Try OpenAI first
+    answer = try_openai(prompt)
 
     if answer:
-        logs.append(f"Completed in {time.time() - start:.2f}s")
-        return answer, logs
+        return answer
 
-    answer, status = try_anthropic(message)
-    logs.append(f"Provider 2 — {status}")
+
+    # Try Anthropic second
+    answer = try_anthropic(prompt)
 
     if answer:
-        logs.append(f"Completed in {time.time() - start:.2f}s")
-        return answer, logs
+        return answer
 
-    answer, status = local_fallback(message)
-    logs.append(f"Provider 3 — {status}")
-    logs.append(f"Completed in {time.time() - start:.2f}s")
 
-    return answer, logs
+    # Local fallback
+    return local_fallback(prompt)
 
+
+# =========================================================
+# HOME PAGE
+# =========================================================
 
 @app.route("/")
 def home():
+
     return render_template("index.html")
 
 
-@app.post("/api/chat")
-def chat():
-    data = request.get_json(silent=True) or {}
-    message = data.get("message", "").strip()
+# =========================================================
+# CHAT API
+# =========================================================
 
-    if not message:
+@app.route("/api/chat", methods=["POST"])
+def chat():
+
+    data = request.get_json() or {}
+
+    prompt = (data.get("prompt") or "").strip()
+
+    if not prompt:
+
         return jsonify({
-            "error": "Message cannot be empty."
+            "error": "Please enter a message."
         }), 400
 
-    answer, logs = smart_chat(message)
+
+    answer = smart_chat(prompt)
 
     return jsonify({
-        "reply": answer,
-        "logs": logs
+        "success": True,
+        "answer": answer
     })
 
 
-@app.post("/api/image")
+# =========================================================
+# IMAGE GENERATION
+# =========================================================
+
+@app.route("/api/image", methods=["POST"])
 def generate_image():
-    prompt = (request.get_json(silent=True) or {}).get("message", "").strip()
+
+    data = request.get_json() or {}
+
+    prompt = (data.get("prompt") or "").strip()
+
 
     if not prompt:
-        return jsonify({"error": "Image prompt is required."}), 400
 
-    # Real image-generation API will be connected here.
-    return jsonify({
-        "type": "image",
-        "status": "ready",
-        "prompt": prompt,
-        "message": "Image generation endpoint is ready for the image provider."
-    })
+        return jsonify({
+            "error": "Please describe the image you want."
+        }), 400
 
 
-@app.post("/api/video")
+    if not OPENAI_KEY:
+
+        return jsonify({
+            "error": "OPENAI_KEY is missing."
+        }), 500
+
+
+    try:
+
+        response = requests.post(
+
+            "https://api.openai.com/v1/images/generations",
+
+            headers={
+                "Authorization": f"Bearer {OPENAI_KEY}",
+                "Content-Type": "application/json"
+            },
+
+            json={
+                "model": "gpt-image-2.5-flare",
+                "prompt": prompt,
+                "size": "1024x1024",
+                "quality": "medium"
+            },
+
+            timeout=180
+        )
+
+
+        result = response.json()
+
+
+        if not response.ok:
+
+            message = (
+                result
+                .get("error", {})
+                .get("message", "Image generation failed.")
+            )
+
+            return jsonify({
+                "error": message
+            }), response.status_code
+
+
+        if not result.get("data"):
+
+            return jsonify({
+                "error": "No image was returned."
+            }), 500
+
+
+        image = result["data"][0]
+
+
+        return jsonify({
+            "success": True,
+            "image": image
+        })
+
+
+    except requests.Timeout:
+
+        return jsonify({
+            "error": "Image generation timed out. Please try again."
+        }), 504
+
+
+    except Exception as e:
+
+        print("Image error:", e)
+
+        return jsonify({
+            "error": "Image generation failed."
+        }), 500
+
+
+# =========================================================
+# VIDEO GENERATION
+# =========================================================
+
+@app.route("/api/video", methods=["POST"])
 def generate_video():
-    prompt = (request.get_json(silent=True) or {}).get("message", "").strip()
+
+    data = request.get_json() or {}
+
+    prompt = (data.get("prompt") or "").strip()
+
 
     if not prompt:
-        return jsonify({"error": "Video prompt is required."}), 400
 
-    # Real video-generation API will be connected here.
+        return jsonify({
+            "error": "Please describe the video you want."
+        }), 400
+
+
+    # We are keeping this route ready for the
+    # real video-generation provider.
+    #
+    # DO NOT pretend that this generates a video yet.
+
     return jsonify({
-        "type": "video",
-        "status": "ready",
-        "prompt": prompt,
-        "message": "Video generation endpoint is ready for the video provider."
-    })
+
+        "success": False,
+
+        "message": (
+            "REX video generation is not connected yet. "
+            "The video API route is ready for the next upgrade."
+        )
+
+    }), 501
 
 
-@app.post("/api/search")
+# =========================================================
+# SEARCH
+# =========================================================
+
+@app.route("/api/search", methods=["POST"])
 def search():
-    query = (request.get_json(silent=True) or {}).get("message", "").strip()
 
-    if not query:
-        return jsonify({"error": "Search query is required."}), 400
+    data = request.get_json() or {}
+
+    prompt = (data.get("prompt") or "").strip()
+
+
+    if not prompt:
+
+        return jsonify({
+            "error": "Please enter something to search for."
+        }), 400
+
+
+    # Temporary search mode.
+    # We will replace this with a real web-search API next.
+
+    answer = smart_chat(
+        f"""
+The user wants information about this search:
+
+{prompt}
+
+Explain that this is currently REX's AI-assisted search mode.
+Do not pretend that you performed a live web search.
+Give the best answer you can from your available knowledge.
+"""
+    )
+
 
     return jsonify({
-        "type": "search",
-        "message": "Search engine integration comes next.",
-        "query": query
+        "success": True,
+        "answer": answer
     })
 
 
-@app.post("/api/research")
+# =========================================================
+# RESEARCH
+# =========================================================
+
+@app.route("/api/research", methods=["POST"])
 def research():
-    query = (request.get_json(silent=True) or {}).get("message", "").strip()
 
-    if not query:
-        return jsonify({"error": "Research question is required."}), 400
+    data = request.get_json() or {}
+
+    prompt = (data.get("prompt") or "").strip()
+
+
+    if not prompt:
+
+        return jsonify({
+            "error": "Please enter a research topic."
+        }), 400
+
+
+    answer = smart_chat(
+        f"""
+Research topic:
+
+{prompt}
+
+Give a structured research-style answer.
+Use headings and bullet points where useful.
+Do not claim that you searched the live internet.
+"""
+    )
+
 
     return jsonify({
-        "type": "research",
-        "message": "Research pipeline comes next.",
-        "query": query
+        "success": True,
+        "answer": answer
     })
 
+
+# =========================================================
+# HEALTH CHECK
+# =========================================================
+
+@app.route("/health")
+def health():
+
+    return jsonify({
+        "status": "online",
+        "assistant": "REX AI",
+        "creator": "Blessed Ovenseri"
+    })
+
+
+# =========================================================
+# RUN SERVER
+# =========================================================
 
 if __name__ == "__main__":
-    port = int(os.getenv("PORT", 5000))
-    app.run(host="0.0.0.0", port=port, debug=False)
+
+    port = int(
+        os.environ.get(
+            "PORT",
+            5000
+        )
+    )
+
+    app.run(
+        host="0.0.0.0",
+        port=port,
+        debug=False
+    )

@@ -2,166 +2,330 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
     <title>REX AI</title>
-    <link rel="stylesheet" href="/static/style.css">
+
+    <link
+        rel="stylesheet"
+        href="{{ url_for('static', filename='style.css') }}"
+    >
 </head>
 
 <body>
 
-<div class="app">
+    <!-- =====================================
+         APP
+    ====================================== -->
 
-    <!-- SIDEBAR -->
-    <aside class="sidebar">
+    <div class="app">
 
-        <div class="brand">
-            <div class="logo">🤖</div>
-            <div>
-                <h2>REX AI</h2>
-                <span>3-KEYS ENGINE</span>
-            </div>
-        </div>
+        <!-- =================================
+             SIDEBAR
+        ================================== -->
 
-        <button class="new-chat" onclick="newChat()">
-            ＋ New Chat
-        </button>
+        <aside class="sidebar">
 
-        <nav>
-            <button class="mode active" data-mode="chat" onclick="setMode('chat')">
-                💬 <span>Chat</span>
-            </button>
+            <div class="brand">
+                <div class="brand-logo">R</div>
 
-            <button class="mode" data-mode="search" onclick="setMode('search')">
-                🔍 <span>Search</span>
-            </button>
-
-            <button class="mode" data-mode="image" onclick="setMode('image')">
-                🎨 <span>Generate Image</span>
-            </button>
-
-            <button class="mode" data-mode="video" onclick="setMode('video')">
-                🎬 <span>Generate Video</span>
-            </button>
-
-            <button class="mode" data-mode="research" onclick="setMode('research')">
-                🧠 <span>Research</span>
-            </button>
-        </nav>
-
-        <div class="sidebar-title">RECENT CHATS</div>
-
-        <div id="history" class="history"></div>
-
-        <div class="sidebar-bottom">
-            <div class="status">
-                <span class="online-dot"></span>
-                REX Online
+                <div>
+                    <h1>REX AI</h1>
+                    <span>AI Assistant</span>
+                </div>
             </div>
 
-            <button class="clear-btn" onclick="clearChat()">
-                🗑 Clear Chat
+
+            <!-- New Chat -->
+
+            <button
+                class="new-chat"
+                onclick="clearChat()"
+            >
+                ＋ New Chat
             </button>
-        </div>
-
-    </aside>
 
 
-    <!-- MAIN -->
-    <main class="main">
+            <!-- Modes -->
 
-        <header class="header">
+            <div class="sidebar-section">
 
-            <div>
-                <h1 id="modeTitle">REX Chat</h1>
-                <p id="modeDescription">
-                    Your AI assistant
-                </p>
+                <div class="section-title">
+                    TOOLS
+                </div>
+
+                <button
+                    class="mode-button active"
+                    data-mode="chat"
+                >
+                    <span>💬</span>
+                    <span>Chat</span>
+                </button>
+
+                <button
+                    class="mode-button"
+                    data-mode="search"
+                >
+                    <span>🔍</span>
+                    <span>Search</span>
+                </button>
+
+                <button
+                    class="mode-button"
+                    data-mode="image"
+                >
+                    <span>🎨</span>
+                    <span>Generate Image</span>
+                </button>
+
+                <button
+                    class="mode-button"
+                    data-mode="video"
+                >
+                    <span>🎬</span>
+                    <span>Generate Video</span>
+                </button>
+
+                <button
+                    class="mode-button"
+                    data-mode="research"
+                >
+                    <span>🧠</span>
+                    <span>Research</span>
+                </button>
+
             </div>
 
-            <div class="engine">
-                <span class="online-dot"></span>
-                3-KEY ENGINE
+
+            <!-- Recent Chats -->
+
+            <div class="sidebar-section recent-section">
+
+                <div class="section-title">
+                    RECENT
+                </div>
+
+                <div class="recent-chat">
+                    💬 Welcome to REX
+                </div>
+
+                <div class="recent-chat">
+                    🎨 Image Generator
+                </div>
+
             </div>
 
-        </header>
+
+            <!-- Bottom -->
+
+            <div class="sidebar-bottom">
+
+                <div class="online-status">
+                    <span class="status-dot"></span>
+
+                    <span>
+                        REX Online
+                    </span>
+                </div>
+
+                <div class="version">
+                    REX AI
+                </div>
+
+            </div>
+
+        </aside>
 
 
-        <!-- CHAT -->
-        <section id="chat" class="chat">
+        <!-- =================================
+             MAIN AREA
+        ================================== -->
 
-            <div class="welcome">
+        <main class="main">
 
-                <div class="rex-icon">🤖</div>
+            <!-- Header -->
 
-                <h2>Wetin dey sup? 👋</h2>
+            <header class="topbar">
 
-                <p>
-                    I'm REX. Ask me anything, write code,
-                    research ideas, or create something.
-                </p>
+                <div class="mobile-brand">
+                    <div class="brand-logo">R</div>
+                    <strong>REX AI</strong>
+                </div>
 
-                <div class="quick-actions">
+                <div class="topbar-title">
+                    <span id="currentMode">
+                        💬 Chat
+                    </span>
+                </div>
 
-                    <button onclick="quickPrompt('Help me create a website')">
-                        💻 Build a website
+                <button
+                    class="clear-button"
+                    onclick="clearChat()"
+                    title="Clear chat"
+                >
+                    🗑️
+                </button>
+
+            </header>
+
+
+            <!-- =================================
+                 CHAT AREA
+            ================================== -->
+
+            <section
+                class="chat-container"
+                id="chatBox"
+            >
+
+            </section>
+
+
+            <!-- =================================
+                 QUICK ACTIONS
+            ================================== -->
+
+            <div class="quick-actions">
+
+                <button
+                    class="quick-card"
+                    data-action="chat"
+                >
+                    <span class="quick-icon">
+                        💬
+                    </span>
+
+                    <div>
+                        <strong>
+                            Ask REX
+                        </strong>
+
+                        <small>
+                            Chat with your AI
+                        </small>
+                    </div>
+                </button>
+
+
+                <button
+                    class="quick-card"
+                    data-action="search"
+                >
+                    <span class="quick-icon">
+                        🔍
+                    </span>
+
+                    <div>
+                        <strong>
+                            Search
+                        </strong>
+
+                        <small>
+                            Find information
+                        </small>
+                    </div>
+                </button>
+
+
+                <button
+                    class="quick-card"
+                    data-action="image"
+                >
+                    <span class="quick-icon">
+                        🎨
+                    </span>
+
+                    <div>
+                        <strong>
+                            Create Image
+                        </strong>
+
+                        <small>
+                            Generate an image
+                        </small>
+                    </div>
+                </button>
+
+
+                <button
+                    class="quick-card"
+                    data-action="research"
+                >
+                    <span class="quick-icon">
+                        🧠
+                    </span>
+
+                    <div>
+                        <strong>
+                            Research
+                        </strong>
+
+                        <small>
+                            Deep research
+                        </small>
+                    </div>
+                </button>
+
+            </div>
+
+
+            <!-- =================================
+                 INPUT AREA
+            ================================== -->
+
+            <div class="input-area">
+
+                <div class="input-wrapper">
+
+                    <textarea
+                        id="messageInput"
+                        rows="1"
+                        placeholder="Ask REX anything..."
+                        autocomplete="off"
+                    ></textarea>
+
+
+                    <button
+                        id="sendButton"
+                        class="send-button"
+                        title="Send"
+                    >
+                        ➤
                     </button>
 
-                    <button onclick="quickPrompt('Give me a game idea')">
-                        🎮 Create a game
-                    </button>
+                </div>
 
-                    <button onclick="quickPrompt('Explain artificial intelligence')">
-                        🧠 Explain AI
-                    </button>
 
-                    <button onclick="setMode('image')">
-                        🎨 Generate image
-                    </button>
+                <div class="input-info">
+
+                    <span>
+                        REX AI can make mistakes.
+                    </span>
+
+                    <span>
+                        Enter to send • Shift + Enter for new line
+                    </span>
 
                 </div>
 
             </div>
 
-        </section>
+        </main>
+
+    </div>
 
 
-        <!-- TYPING -->
-        <div id="typing" class="typing">
-            <span></span>
-            <span></span>
-            <span></span>
-            REX is thinking...
-        </div>
+    <!-- =====================================
+         JAVASCRIPT
+    ====================================== -->
 
-
-        <!-- INPUT -->
-        <footer class="input-area">
-
-            <div class="input-wrapper">
-
-                <textarea
-                    id="message"
-                    rows="1"
-                    placeholder="Ask REX anything..."
-                ></textarea>
-
-                <button id="sendButton" onclick="sendMessage()">
-                    ➤
-                </button>
-
-            </div>
-
-            <div class="input-hint">
-                Enter to send • Shift + Enter for new line
-            </div>
-
-        </footer>
-
-    </main>
-
-</div>
-
-<script src="/static/app.js"></script>
+    <script
+        src="{{ url_for('static', filename='app.js') }}"
+    ></script>
 
 </body>
 </html>

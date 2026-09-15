@@ -1,141 +1,148 @@
-let mode = "chat";
+// ==========================================
+// REX AI - MAIN JAVASCRIPT
+// ==========================================
 
-const chat = document.getElementById("chat");
-const message = document.getElementById("message");
-const typing = document.getElementById("typing");
+let currentMode = "chat";
+
+// ------------------------------------------
+// ELEMENTS
+// ------------------------------------------
+
+const chatBox = document.getElementById("chatBox");
+const messageInput = document.getElementById("messageInput");
 const sendButton = document.getElementById("sendButton");
-const history = document.getElementById("history");
 
-const modeInfo = {
-    chat: {
-        title: "REX Chat",
-        description: "Your AI assistant",
-        placeholder: "Ask REX anything..."
-    },
+// ------------------------------------------
+// CHANGE MODE
+// ------------------------------------------
 
-    search: {
-        title: "REX Search",
-        description: "Search for information",
-        placeholder: "What do you want to search for?"
-    },
+function setMode(mode) {
+    currentMode = mode;
 
-    image: {
-        title: "Generate Image",
-        description: "Turn your idea into an image",
-        placeholder: "Describe the image you want..."
-    },
-
-    video: {
-        title: "Generate Video",
-        description: "Turn your idea into a video",
-        placeholder: "Describe the video you want..."
-    },
-
-    research: {
-        title: "REX Research",
-        description: "Deep research and analysis",
-        placeholder: "What should REX research?"
-    }
-};
-
-
-function setMode(newMode) {
-
-    mode = newMode;
-
-    document.querySelectorAll(".mode").forEach(button => {
+    // Remove active state
+    document.querySelectorAll(".mode-button").forEach(button => {
         button.classList.remove("active");
     });
 
-    const active = document.querySelector(
-        `.mode[data-mode="${newMode}"]`
+    // Add active state
+    const selected = document.querySelector(
+        `[data-mode="${mode}"]`
     );
 
-    if (active) {
-        active.classList.add("active");
+    if (selected) {
+        selected.classList.add("active");
     }
 
-    document.getElementById("modeTitle").textContent =
-        modeInfo[newMode].title;
+    // Update placeholder
+    const placeholders = {
+        chat: "Ask REX anything...",
+        search: "What should REX search for?",
+        image: "Describe the image you want...",
+        video: "Describe the video you want...",
+        research: "What should REX research?"
+    };
 
-    document.getElementById("modeDescription").textContent =
-        modeInfo[newMode].description;
-
-    message.placeholder =
-        modeInfo[newMode].placeholder;
-
-    message.focus();
-}
-
-
-function quickPrompt(prompt) {
-    message.value = prompt;
-    message.focus();
-}
-
-
-function addMessage(text, sender, logs = []) {
-
-    const wrapper = document.createElement("div");
-
-    wrapper.className = `message ${sender}`;
-
-    const content = document.createElement("div");
-
-    content.className = "message-content";
-
-    content.textContent = text;
-
-    wrapper.appendChild(content);
-
-    chat.appendChild(wrapper);
-
-
-    if (logs.length && sender === "bot") {
-
-        const logBox = document.createElement("div");
-
-        logBox.className = "logs";
-
-        logBox.textContent = logs.join("\n");
-
-        chat.appendChild(logBox);
+    if (messageInput) {
+        messageInput.placeholder =
+            placeholders[mode] || placeholders.chat;
     }
-
-    chat.scrollTop = chat.scrollHeight;
 }
 
+// ------------------------------------------
+// ADD MESSAGE
+// ------------------------------------------
+
+function addMessage(sender, content) {
+    if (!chatBox) return;
+
+    const message = document.createElement("div");
+
+    message.className =
+        sender === "user"
+            ? "message user-message"
+            : "message rex-message";
+
+    message.innerHTML = content;
+
+    chatBox.appendChild(message);
+
+    chatBox.scrollTop = chatBox.scrollHeight;
+}
+
+// ------------------------------------------
+// TYPING INDICATOR
+// ------------------------------------------
 
 function showTyping() {
-    typing.style.display = "block";
-    sendButton.disabled = true;
+    if (!chatBox) return;
+
+    const typing = document.createElement("div");
+
+    typing.id = "rexTyping";
+    typing.className = "message rex-message";
+
+    typing.innerHTML = `
+        <div class="typing">
+            <span></span>
+            <span></span>
+            <span></span>
+        </div>
+    `;
+
+    chatBox.appendChild(typing);
+
+    chatBox.scrollTop = chatBox.scrollHeight;
 }
 
+function removeTyping() {
+    const typing = document.getElementById("rexTyping");
 
-function hideTyping() {
-    typing.style.display = "none";
-    sendButton.disabled = false;
+    if (typing) {
+        typing.remove();
+    }
 }
 
+// ------------------------------------------
+// SEND CHAT
+// ------------------------------------------
 
-async function sendMessage() {
+async function send() {
+    if (!messageInput) return;
 
-    const value = message.value.trim();
+    const prompt = messageInput.value.trim();
 
-    if (!value) return;
+    if (!prompt) return;
 
-    addMessage(value, "user");
+    messageInput.value = "";
 
-    message.value = "";
+    // Show user's message
+    addMessage("user", escapeHTML(prompt));
 
+    // IMAGE
+    if (currentMode === "image") {
+        await generateImage(prompt);
+        return;
+    }
+
+    // VIDEO
+    if (currentMode === "video") {
+        await generateVideo(prompt);
+        return;
+    }
+
+    // Other modes
+    await sendToAPI(currentMode, prompt);
+}
+
+// ------------------------------------------
+// SEND TO BACKEND
+// ------------------------------------------
+
+async function sendToAPI(mode, prompt) {
     showTyping();
 
-    let endpoint = `/api/${mode}`;
-
     try {
-
-        const response = await fetch(endpoint, {
-
+        const response = await fetch(`/api/${mode}`, {
             method: "POST",
 
             headers: {
@@ -143,161 +150,437 @@ async function sendMessage() {
             },
 
             body: JSON.stringify({
-                message: value
+                prompt: prompt
             })
         });
 
+        const data = await response.json();
+
+        removeTyping();
+
+        if (!response.ok) {
+            addMessage(
+                "rex",
+                `❌ ${escapeHTML(
+                    data.error || "Something went wrong."
+                )}`
+            );
+
+            return;
+        }
+
+        // Try common response fields
+        const answer =
+            data.answer ||
+            data.response ||
+            data.message ||
+            data.result ||
+            "REX didn't return a response.";
+
+        addMessage(
+            "rex",
+            formatResponse(answer)
+        );
+
+    } catch (error) {
+        removeTyping();
+
+        addMessage(
+            "rex",
+            "❌ Could not connect to REX's server."
+        );
+
+        console.error(error);
+    }
+}
+
+// ------------------------------------------
+// REAL IMAGE GENERATION
+// ------------------------------------------
+
+async function generateImage(prompt) {
+    showTyping();
+
+    try {
+        const response = await fetch("/api/image", {
+            method: "POST",
+
+            headers: {
+                "Content-Type": "application/json"
+            },
+
+            body: JSON.stringify({
+                prompt: prompt
+            })
+        });
 
         const data = await response.json();
 
+        removeTyping();
 
         if (!response.ok) {
-            throw new Error(
-                data.error || "REX request failed."
+            addMessage(
+                "rex",
+                `❌ ${escapeHTML(
+                    data.error || "Image generation failed."
+                )}`
             );
+
+            return;
         }
 
+        const image = data.image;
 
-        if (data.reply) {
-
+        if (!image) {
             addMessage(
-                data.reply,
-                "bot",
-                data.logs || []
+                "rex",
+                "❌ REX did not receive an image."
             );
 
-        } else if (data.message) {
-
-            addMessage(
-                data.message,
-                "bot",
-                data.logs || []
-            );
-
+            return;
         }
 
+        // Base64 image
+        if (image.b64_json) {
+            const imageHTML = `
+                <div class="generated-image">
+                    <img
+                        src="data:image/png;base64,${image.b64_json}"
+                        alt="REX generated image"
+                    >
+                </div>
+            `;
 
-        saveHistory(value);
+            addMessage("rex", imageHTML);
 
-    } catch (error) {
+            return;
+        }
+
+        // URL image
+        if (image.url) {
+            const imageHTML = `
+                <div class="generated-image">
+                    <img
+                        src="${escapeAttribute(image.url)}"
+                        alt="REX generated image"
+                    >
+                </div>
+            `;
+
+            addMessage("rex", imageHTML);
+
+            return;
+        }
 
         addMessage(
-            `REX error: ${error.message}`,
-            "bot"
+            "rex",
+            "❌ REX received an unknown image format."
         );
 
-    } finally {
+    } catch (error) {
+        removeTyping();
 
-        hideTyping();
+        addMessage(
+            "rex",
+            "❌ Image generation could not connect to the server."
+        );
 
+        console.error("IMAGE ERROR:", error);
     }
 }
 
+// ------------------------------------------
+// VIDEO GENERATION
+// ------------------------------------------
 
-function newChat() {
+async function generateVideo(prompt) {
+    showTyping();
 
-    chat.innerHTML = `
-        <div class="welcome">
+    try {
+        const response = await fetch("/api/video", {
+            method: "POST",
 
-            <div class="rex-icon">🤖</div>
+            headers: {
+                "Content-Type": "application/json"
+            },
 
-            <h2>Wetin dey sup? 👋</h2>
+            body: JSON.stringify({
+                prompt: prompt
+            })
+        });
 
-            <p>
-                I'm REX. What are we building today?
-            </p>
+        const data = await response.json();
 
-        </div>
-    `;
+        removeTyping();
 
-    message.value = "";
+        if (!response.ok) {
+            addMessage(
+                "rex",
+                `❌ ${escapeHTML(
+                    data.error || "Video generation failed."
+                )}`
+            );
 
-    setMode("chat");
+            return;
+        }
+
+        const result =
+            data.video ||
+            data.answer ||
+            data.response ||
+            data.message ||
+            data.result;
+
+        if (!result) {
+            addMessage(
+                "rex",
+                "🎬 Video request completed, but no video was returned yet."
+            );
+
+            return;
+        }
+
+        // If backend returns a video URL
+        if (
+            typeof result === "string" &&
+            (
+                result.startsWith("http://") ||
+                result.startsWith("https://")
+            )
+        ) {
+            addMessage(
+                "rex",
+                `
+                <div class="generated-video">
+                    <video controls>
+                        <source src="${escapeAttribute(result)}">
+                        Your browser does not support video.
+                    </video>
+                </div>
+                `
+            );
+
+            return;
+        }
+
+        addMessage(
+            "rex",
+            formatResponse(result)
+        );
+
+    } catch (error) {
+        removeTyping();
+
+        addMessage(
+            "rex",
+            "❌ Video generation could not connect to the server."
+        );
+
+        console.error("VIDEO ERROR:", error);
+    }
 }
 
+// ------------------------------------------
+// CLEAR CHAT
+// ------------------------------------------
 
 function clearChat() {
+    if (!chatBox) return;
 
-    newChat();
+    chatBox.innerHTML = "";
 
-    history.innerHTML = "";
+    localStorage.removeItem("rexChatHistory");
 
-    localStorage.removeItem("rexHistory");
+    showWelcomeMessage();
 }
 
+// ------------------------------------------
+// WELCOME MESSAGE
+// ------------------------------------------
 
-function saveHistory(text) {
+function showWelcomeMessage() {
+    if (!chatBox) return;
 
-    let saved =
-        JSON.parse(
-            localStorage.getItem("rexHistory") || "[]"
-        );
+    addMessage(
+        "rex",
+        `
+        <h2>👋 Hey! I'm REX.</h2>
 
-    saved.unshift(text);
+        <p>
+            I'm ready to help you.
+        </p>
 
-    saved = saved.slice(0, 10);
+        <p>
+            Try Chat, Search, Image, Video, or Research.
+        </p>
+        `
+    );
+}
+
+// ------------------------------------------
+// SAVE CHAT
+// ------------------------------------------
+
+function saveChat() {
+    if (!chatBox) return;
 
     localStorage.setItem(
-        "rexHistory",
-        JSON.stringify(saved)
+        "rexChatHistory",
+        chatBox.innerHTML
     );
-
-    renderHistory();
 }
 
+// ------------------------------------------
+// LOAD CHAT
+// ------------------------------------------
 
-function renderHistory() {
+function loadChat() {
+    if (!chatBox) return;
 
     const saved =
-        JSON.parse(
-            localStorage.getItem("rexHistory") || "[]"
-        );
+        localStorage.getItem("rexChatHistory");
 
-    history.innerHTML = "";
-
-    saved.forEach(item => {
-
-        const div =
-            document.createElement("div");
-
-        div.className = "history-item";
-
-        div.textContent =
-            item.length > 30
-                ? item.substring(0, 30) + "..."
-                : item;
-
-        div.onclick = () => {
-            message.value = item;
-            message.focus();
-        };
-
-        history.appendChild(div);
-
-    });
+    if (saved) {
+        chatBox.innerHTML = saved;
+    } else {
+        showWelcomeMessage();
+    }
 }
 
+// ------------------------------------------
+// ESCAPE HTML
+// ------------------------------------------
 
-message.addEventListener("keydown", event => {
+function escapeHTML(text) {
+    const div = document.createElement("div");
 
-    if (event.key === "Enter" && !event.shiftKey) {
+    div.textContent = String(text);
 
-        event.preventDefault();
+    return div.innerHTML;
+}
 
-        sendMessage();
+// ------------------------------------------
+// ESCAPE ATTRIBUTE
+// ------------------------------------------
+
+function escapeAttribute(text) {
+    return String(text)
+        .replace(/&/g, "&amp;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;");
+}
+
+// ------------------------------------------
+// FORMAT RESPONSE
+// ------------------------------------------
+
+function formatResponse(text) {
+    if (text === null || text === undefined) {
+        return "";
     }
 
-});
+    return escapeHTML(String(text))
+        .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
+        .replace(/\n/g, "<br>");
+}
 
+// ------------------------------------------
+// ENTER KEY
+// ------------------------------------------
 
-message.addEventListener("input", () => {
+if (messageInput) {
+    messageInput.addEventListener(
+        "keydown",
+        function(event) {
 
-    message.style.height = "auto";
+            if (
+                event.key === "Enter" &&
+                !event.shiftKey
+            ) {
+                event.preventDefault();
+                send();
+            }
 
-    message.style.height =
-        Math.min(message.scrollHeight, 150) + "px";
+        }
+    );
+}
 
-});
+// ------------------------------------------
+// SEND BUTTON
+// ------------------------------------------
 
+if (sendButton) {
+    sendButton.addEventListener(
+        "click",
+        send
+    );
+}
 
-renderHistory();
+// ------------------------------------------
+// MODE BUTTONS
+// ------------------------------------------
+
+document
+    .querySelectorAll(".mode-button")
+    .forEach(button => {
+
+        button.addEventListener(
+            "click",
+            () => {
+
+                const mode =
+                    button.dataset.mode;
+
+                if (mode) {
+                    setMode(mode);
+                }
+
+            }
+        );
+
+    });
+
+// ------------------------------------------
+// QUICK ACTION BUTTONS
+// ------------------------------------------
+
+document
+    .querySelectorAll("[data-action]")
+    .forEach(button => {
+
+        button.addEventListener(
+            "click",
+            () => {
+
+                const action =
+                    button.dataset.action;
+
+                if (action) {
+                    setMode(action);
+
+                    if (messageInput) {
+                        messageInput.focus();
+                    }
+                }
+
+            }
+        );
+
+    });
+
+// ------------------------------------------
+// START REX
+// ------------------------------------------
+
+document.addEventListener(
+    "DOMContentLoaded",
+    () => {
+
+        setMode("chat");
+
+        loadChat();
+
+    }
+);
