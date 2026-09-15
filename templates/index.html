@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>REX AI</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+
+<body>
+
+<div class="app">
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+
+        <div class="brand">
+            <div class="logo">🤖</div>
+            <div>
+                <h2>REX AI</h2>
+                <span>3-KEYS ENGINE</span>
+            </div>
+        </div>
+
+        <button class="new-chat" onclick="newChat()">
+            ＋ New Chat
+        </button>
+
+        <nav>
+            <button class="mode active" data-mode="chat" onclick="setMode('chat')">
+                💬 <span>Chat</span>
+            </button>
+
+            <button class="mode" data-mode="search" onclick="setMode('search')">
+                🔍 <span>Search</span>
+            </button>
+
+            <button class="mode" data-mode="image" onclick="setMode('image')">
+                🎨 <span>Generate Image</span>
+            </button>
+
+            <button class="mode" data-mode="video" onclick="setMode('video')">
+                🎬 <span>Generate Video</span>
+            </button>
+
+            <button class="mode" data-mode="research" onclick="setMode('research')">
+                🧠 <span>Research</span>
+            </button>
+        </nav>
+
+        <div class="sidebar-title">RECENT CHATS</div>
+
+        <div id="history" class="history"></div>
+
+        <div class="sidebar-bottom">
+            <div class="status">
+                <span class="online-dot"></span>
+                REX Online
+            </div>
+
+            <button class="clear-btn" onclick="clearChat()">
+                🗑 Clear Chat
+            </button>
+        </div>
+
+    </aside>
+
+
+    <!-- MAIN -->
+    <main class="main">
+
+        <header class="header">
+
+            <div>
+                <h1 id="modeTitle">REX Chat</h1>
+                <p id="modeDescription">
+                    Your AI assistant
+                </p>
+            </div>
+
+            <div class="engine">
+                <span class="online-dot"></span>
+                3-KEY ENGINE
+            </div>
+
+        </header>
+
+
+        <!-- CHAT -->
+        <section id="chat" class="chat">
+
+            <div class="welcome">
+
+                <div class="rex-icon">🤖</div>
+
+                <h2>Wetin dey sup? 👋</h2>
+
+                <p>
+                    I'm REX. Ask me anything, write code,
+                    research ideas, or create something.
+                </p>
+
+                <div class="quick-actions">
+
+                    <button onclick="quickPrompt('Help me create a website')">
+                        💻 Build a website
+                    </button>
+
+                    <button onclick="quickPrompt('Give me a game idea')">
+                        🎮 Create a game
+                    </button>
+
+                    <button onclick="quickPrompt('Explain artificial intelligence')">
+                        🧠 Explain AI
+                    </button>
+
+                    <button onclick="setMode('image')">
+                        🎨 Generate image
+                    </button>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- TYPING -->
+        <div id="typing" class="typing">
+            <span></span>
+            <span></span>
+            <span></span>
+            REX is thinking...
+        </div>
+
+
+        <!-- INPUT -->
+        <footer class="input-area">
+
+            <div class="input-wrapper">
+
+                <textarea
+                    id="message"
+                    rows="1"
+                    placeholder="Ask REX anything..."
+                ></textarea>
+
+                <button id="sendButton" onclick="sendMessage()">
+                    ➤
+                </button>
+
+            </div>
+
+            <div class="input-hint">
+                Enter to send • Shift + Enter for new line
+            </div>
+
+        </footer>
+
+    </main>
+
+</div>
+
+<script src="/static/app.js"></script>
+
+</body>
+</html>
